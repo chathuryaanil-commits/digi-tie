@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishcraft - Create Magical Moments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Playfair Display', 'serif'],
+                        sans: ['DM Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        cream: '#FDF8F3',
+                        coral: '#FF6B5B',
+                        coralDark: '#E55A4A',
+                        gold: '#D4A574',
+                        goldDark: '#B8935E',
+                        charcoal: '#2D2D2D',
+                        warmGray: '#6B6560',
+                        softPink: '#FFF0EB',
+                        mint: '#E8F5F0',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { box-sizing: border-box; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(3deg); }
+        }
+        
+        @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(25px) rotate(-3deg); }
+        }
+        
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes orbit {
+            from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+        }
+        
+        .animate-float { animation: float 7s ease-in-out infinite; }
+        .animate-float-reverse { animation: floatReverse 9s ease-in-out infinite; }
+        .animate-pulse-soft { animation: pulse-soft 5s ease-in-out infinite; }
+        .animate-slide-up { animation: slideUp 0.8s ease-out forwards; opacity: 0; }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #FF6B5B 0%, #D4A574 50%, #E55A4A 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .shimmer-btn {
+            background: linear-gradient(90deg, #FF6B5B 0%, #FF8A7A 25%, #FF6B5B 50%, #FF8A7A 75%, #FF6B5B 100%);
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+        
+        .card-hover {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(255, 107, 91, 0.25);
+        }
+        
+        .sparkle {
+            animation: sparkle 2s ease-in-out infinite;
+        }
+        
+        .orbit-element {
+            animation: orbit 20s linear infinite;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .animate-float, .animate-float-reverse, .animate-pulse-soft, .shimmer-btn, .sparkle, .orbit-element {
+                animation: none;
+            }
+            .animate-slide-up {
+                animation: none;
+                opacity: 1;
+            }
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .feature-icon {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.15) rotate(-5deg);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-cream">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+        
+        // Floating Shape Component
+        const FloatingShape = ({ delay, size, color, left, top, type }) => {
+            const shapeStyle = {
+                width: size,
+                height: size,
+                left: `${left}%`,
+                top: `${top}%`,
+                backgroundColor: color,
+                animationDelay: `${delay}s`,
+            };
+            
+            const shapeClass = type === 'reverse' ? 'animate-float-reverse' : 'animate-float';
+            
+            return (
+                <div 
+                    className={`absolute rounded-full opacity-40 pointer-events-none ${shapeClass}`}
+                    style={shapeStyle}
+                />
+            );
+        };
+        
+        // Sparkle Component
+        const Sparkle = ({ x, y, delay }) => (
+            <div 
+                className="absolute sparkle pointer-events-none"
+                style={{
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    animationDelay: `${delay}s`,
+                }}
+            >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 0L11.5 8.5L20 10L11.5 11.5L10 20L8.5 11.5L0 10L8.5 8.5L10 0Z" fill="#D4A574"/>
+                </svg>
+            </div>
+        );
+        
+        // Mouse Follower Component
+        const MouseFollower = () => {
+            const [position, setPosition] = useState({ x: 0, y: 0 });
+            const [visible, setVisible] = useState(false);
+            
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    setPosition({ x: e.clientX, y: e.clientY });
+                    setVisible(true);
+                };
+                
+                const handleMouseLeave = () => setVisible(false);
+                
+                window.addEventListener('mousemove', handleMouseMove);
+                document.body.addEventListener('mouseleave', handleMouseLeave);
+                
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    document.body.removeEventListener('mouseleave', handleMouseLeave);
+                };
+            }, []);
+            
+            if (!visible) return null;
+            
+            return (
+                <div 
+                    className="fixed pointer-events-none z-50 w-6 h-6 -translate-x-1/2 -translate-y-1/2 transition-transform duration-100 ease-out"
+                    style={{ left: position.x, top: position.y }}
+                >
+                    <div className="w-full h-full rounded-full bg-coral/20 animate-pulse-soft" />
+                </div>
+            );
+        };
+        
+        // Navigation Component
+        const Navigation = () => {
+            const [scrolled, setScrolled] = useState(false);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            
+            useEffect(() => {
+                const handleScroll = () => setScrolled(window.scrollY > 30);
+                window.addEventListener('scroll', handleScroll, { passive: true });
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+            
+            return (
+                <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-cream/90 nav-blur shadow-sm' : 'bg-transparent'}`}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-coral to-gold flex items-center justify-center shadow-lg shadow-coral/20">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                </svg>
+                            </div>
+                            <span className="font-display text-2xl font-bold text-charcoal">Wishcraft</span>
+                        </div>
+                        
+                        <p className="hidden lg:block text-warmGray font-sans text-sm max-w-xs text-center">
+                            Create magical moments for your loved ones
+                        </p>
+                        
+                        <div className="flex items-center gap-3">
+                            <button className="hidden sm:block px-5 py-2.5 rounded-full bg-charcoal text-cream font-sans font-medium text-sm hover:bg-warmGray transition-all duration-300 hover:scale-105">
+                                Sign In
+                            </button>
+                            <button 
+                                className="lg:hidden p-2 rounded-lg hover:bg-charcoal/5 transition-colors"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            >
+                                <svg className="w-6 h-6 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Mobile Menu */}
+                    {mobileMenuOpen && (
+                        <div className="lg:hidden bg-cream/95 nav-blur border-t border-charcoal/5 px-6 py-4">
+                            <p className="text-warmGray text-sm mb-4">Create magical moments for your loved ones</p>
+                            <button className="w-full px-5 py-3 rounded-full bg-charcoal text-cream font-sans font-medium">
+                                Sign In
+                            </button>
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+        
+        // Stat Badge Component
+        const StatBadge = ({ number, label, delay }) => (
+            <div 
+                className="animate-slide-up flex flex-col items-center px-5 sm:px-8 py-5 glass-card rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                style={{ animationDelay: `${delay}s` }}
+            >
+                <span className="font-display text-3xl sm:text-4xl font-bold gradient-text">{number}</span>
+                <span className="font-sans text-sm text-warmGray mt-1 font-medium">{label}</span>
+            </div>
+        );
+        
+        // Hero Section Component
+        const HeroSection = () => {
+            return (
+                <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-cream via-softPink/30 to-cream pt-20">
+                    {/* Background decorations */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        <FloatingShape delay={0} size={100} color="#FFD4CC" left={8} top={15} type="normal" />
+                        <FloatingShape delay={2} size={70} color="#FFE8D6" left={88} top={20} type="reverse" />
+                        <FloatingShape delay={1} size={120} color="#FFF0E6" left={80} top={55} type="normal" />
+                        <FloatingShape delay={3} size={60} color="#FFD4CC" left={5} top={65} type="reverse" />
+                        <FloatingShape delay={1.5} size={50} color="#D4A574" left={92} top={75} type="normal" />
+                        <FloatingShape delay={2.5} size={90} color="#FFE8D6" left={15} top={85} type="reverse" />
+                        
+                        <Sparkle x={20} y={25} delay={0} />
+                        <Sparkle x={75} y={15} delay={0.5} />
+                        <Sparkle x={85} y={70} delay={1} />
+                        <Sparkle x={10} y={60} delay={1.5} />
+                        <Sparkle x={50} y={10} delay={2} />
+                    </div>
+                    
+                    {/* Gradient orbs */}
+                    <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] bg-coral/10 rounded-full blur-3xl animate-pulse-soft" />
+                    <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-gold/10 rounded-full blur-3xl animate-pulse-soft" style={{animationDelay: '2s'}} />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-softPink/50 rounded-full blur-3xl" />
+                    
+                    <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center">
+                        <div className="animate-slide-up" style={{ animationDelay: '0s' }}>
+                            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 border border-coral/20 text-coral font-sans text-sm font-medium mb-8 shadow-sm">
+                                <span className="w-2 h-2 rounded-full bg-coral animate-pulse" />
+                                Celebrate Every Moment
+                            </span>
+                        </div>
+                        
+                        <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-charcoal leading-[1.1] mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                            Make Every Special Day<br className="hidden sm:block" />
+                            <span className="gradient-text">Unforgettable</span>
+                        </h1>
+                        
+                        <p className="font-sans text-base sm:text-lg md:text-xl text-warmGray max-w-2xl mx-auto mb-10 leading-relaxed animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                            Craft personalized wishes, interactive treasure hunts, and heartfelt messages. 
+                            Make birthdays, anniversaries, and celebrations truly magical.
+                        </p>
+                        
+                        {/* Stats */}
+                        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-12 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                            <StatBadge number="16+" label="Templates" delay={0.3} />
+                            <StatBadge number="5" label="Quest Themes" delay={0.4} />
+                            <StatBadge number="25+" label="Riddles" delay={0.5} />
+                        </div>
+                        
+                        {/* CTA Buttons */}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.5s' }}>
+                            <button className="group w-full sm:w-auto px-8 py-4 rounded-full shimmer-btn text-white font-sans font-semibold text-lg shadow-xl shadow-coral/30 hover:shadow-2xl hover:shadow-coral/40 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-coral/30">
+                                Get Started
+                                <svg className="inline-block ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                </svg>
+                            </button>
+                            <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-charcoal font-sans font-semibold text-lg border-2 border-charcoal/10 hover:border-gold hover:text-goldDark transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md focus:outline-none focus:ring-4 focus:ring-gold/20">
+                                <svg className="inline-block mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Set Countdown
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Scroll indicator */}
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-warmGray">
+                        <span className="text-xs font-sans tracking-wider uppercase">Scroll</span>
+                        <div className="w-6 h-10 rounded-full border-2 border-warmGray/30 flex justify-center pt-2">
+                            <div className="w-1.5 h-3 rounded-full bg-coral animate-bounce" />
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // Feature Card Component
+        const FeatureCard = ({ icon, title, description, gradient, delay }) => {
+            const [isHovered, setIsHovered] = useState(false);
+            
+            return (
+                <div 
+                    className="feature-card card-hover bg-white rounded-3xl p-6 sm:p-8 cursor-pointer group animate-slide-up border border-charcoal/5"
+                    style={{ animationDelay: `${delay}s` }}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                >
+                    <div 
+                        className="feature-icon w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
+                        style={{ background: gradient }}
+                    >
+                        <span className="text-3xl">{icon}</span>
+                    </div>
+                    <h3 className="font-display text-xl sm:text-2xl font-bold text-charcoal mb-3 group-hover:text-coral transition-colors duration-300">
+                        {title}
+                    </h3>
+                    <p className="font-sans text-warmGray leading-relaxed text-sm sm:text-base">
+                        {description}
+                    </p>
+                    <div className="mt-6 flex items-center gap-2 text-coral font-sans font-semibold text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        <span>Explore</span>
+                        <svg className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Features Section Component
+        const FeaturesSection = () => {
+            const features = [
+                {
+                    icon: '🎂',
+                    title: 'Birthday Wishes',
+                    description: 'Create personalized birthday messages with beautiful templates, photos, and heartfelt notes that make them feel truly special.',
+                    gradient: 'linear-gradient(135deg, #FF6B5B 0%, #FF8A7A 100%)'
+                },
+                {
+                    icon: '💕',
+                    title: 'Love Notes',
+                    description: 'Celebrate your anniversaries and special moments with romantic cards, memory galleries, and customizable love letters.',
+                    gradient: 'linear-gradient(135deg, #E85D75 0%, #F5A3B5 100%)'
+                },
+                {
+                    icon: '🏆',
+                    title: 'Celebrations',
+                    description: 'Honor achievements and milestones with stunning congratulation cards, graduation wishes, and success celebrations.',
+                    gradient: 'linear-gradient(135deg, #D4A574 0%, #E8C9A8 100%)'
+                },
+                {
+                    icon: '🗺️',
+                    title: 'Quest Hunts',
+                    description: 'Design exciting treasure hunts and adventure games with riddles, clues, and hidden surprises for unforgettable experiences.',
+                    gradient: 'linear-gradient(135deg, #4ECDC4 0%, #7BE0D8 100%)'
+                }
+            ];
+            
+            return (
+                <section className="py-20 sm:py-28 bg-gradient-to-b from-cream via-mint/20 to-cream relative overflow-hidden">
+                    {/* Background decoration */}
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-charcoal/10 to-transparent" />
+                    <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-charcoal/10 to-transparent" />
+                    
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                        <div className="text-center mb-16">
+                            <span className="inline-block px-4 py-2 rounded-full bg-gold/10 text-goldDark font-sans text-sm font-medium mb-4 animate-slide-up" style={{ animationDelay: '0s' }}>
+                                Our Features
+                            </span>
+                            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-charcoal mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                                Four Ways to Spread Joy
+                            </h2>
+                            <p className="font-sans text-base sm:text-lg text-warmGray max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                                Choose from our collection of magical ways to celebrate and connect with the people you love.
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                            {features.map((feature, index) => (
+                                <FeatureCard key={index} {...feature} delay={0.3 + index * 0.1} />
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+        
+        // Testimonial/CTA Section
+        const CTASection = () => {
+            return (
+                <section className="py-20 sm:py-28 bg-charcoal relative overflow-hidden">
+                    {/* Animated background elements */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-coral/10 rounded-full blur-3xl animate-pulse-soft" />
+                        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-gold/10 rounded-full blur-3xl animate-pulse-soft" style={{ animationDelay: '1s' }} />
+                    </div>
+                    
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
+                        <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-cream mb-6">
+                            Ready to Create Some Magic?
+                        </h2>
+                        <p className="font-sans text-base sm:text-lg text-cream/70 max-w-xl mx-auto mb-10">
+                            Join thousands of people who are already making their loved ones feel special with Wishcraft.
+                        </p>
+                        <button className="px-10 py-4 rounded-full bg-gradient-to-r from-coral to-gold text-white font-sans font-semibold text-lg shadow-2xl shadow-coral/30 hover:shadow-coral/50 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cream/20">
+                            Start Creating for Free
+                        </button>
+                        <p className="mt-6 font-sans text-sm text-cream/50">No credit card required</p>
+                    </div>
+                </section>
+            );
+        };
+        
+        // Footer Component
+        const Footer = () => {
+            return (
+                <footer className="bg-gradient-to-b from-charcoal to-charcoal/95 text-cream py-16">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-coral to-gold flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                    </svg>
+                                </div>
+                                <span className="font-display text-xl font-bold">Wishcraft</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-8 font-sans text-sm text-cream/60">
+                                <a href="#" className="hover:text-coral transition-colors">Privacy</a>
+                                <a href="#" className="hover:text-coral transition-colors">Terms</a>
+                                <a href="#" className="hover:text-coral transition-colors">Contact</a>
+                            </div>
+                        </div>
+                        
+                        <div className="h-px bg-cream/10 my-8" />
+                        
+                        <p className="text-center font-sans text-sm text-cream/40">
+                            Creating magical moments, one wish at a time.
+                        </p>
+                    </div>
+                </footer>
+            );
+        };
+        
+        // Main App Component
+        const App = () => {
+            const [isLoaded, setIsLoaded] = useState(false);
+            
+            useEffect(() => {
+                setIsLoaded(true);
+            }, []);
+            
+            return (
+                <div className={`font-sans antialiased transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                    <MouseFollower />
+                    <Navigation />
+                    <main>
+                        <HeroSection />
+                        <FeaturesSection />
+                        <CTASection />
+                    </main>
+                    <Footer />
+                </div>
+            );
+        };
+        
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
